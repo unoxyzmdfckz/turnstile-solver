@@ -7,7 +7,6 @@ import random
 import logging
 import asyncio
 import argparse
-os.system("patchright install")
 from quart import Quart, request, jsonify
 from camoufox.async_api import AsyncCamoufox
 from patchright.async_api import async_playwright
