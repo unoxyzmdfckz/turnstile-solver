@@ -92,23 +92,23 @@ class TurnstileAPIServer:
         self.proxy_support = proxy_support
         self.browser_pool = asyncio.Queue()
         self.browser_args = []
-        if useragent:
-            self.useragent = useragent
-            logger.info(f"Using custom User-Agent: {self.useragent}")
+
+        # Headless mode: use passed user-agent or generate one via fake_useragent
+        if self.headless:
+            if not self.useragent:
+                try:
+                    ua = UserAgent()
+                    self.useragent = ua.random
+                    logger.info(f"Generated fake User-Agent (headless mode): {self.useragent}")
+                except Exception as e:
+                    logger.warning(f"Failed to generate User-Agent: {str(e)}")
+            else:
+                logger.info(f"Using custom User-Agent (headless mode): {self.useragent}")
+            self.browser_args.append(f"--user-agent={self.useragent}")
         else:
-            try:
-                ua = UserAgent()
-                self.useragent = ua.chrome  # You can use ua.random instead if desired
-                logger.success(f"Generated random User-Agent: {self.useragent}")
-            except Exception as e:
-                # Fallback if generation fails
-                self.useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
-                logger.warning(f"Failed to generate User-Agent, using fallback: {self.useragent} | Error: {str(e)}")
+            if self.useragent:
+                logger.warning("Non-headless mode detected: ignoring custom User-Agent to preserve real browser fingerprint")
 
-        # Add UA to browser launch arguments
-        self.browser_args = [f"--user-agent={self.useragent}"]
-
-        self.browser_pool = asyncio.Queue()
         self._setup_routes()
 
 
@@ -380,4 +380,3 @@ if __name__ == '__main__':
             proxy_support=args.proxy
         )
         app.run(host="localhost", port=int(os.getenv("PORT", 5000)))
-
